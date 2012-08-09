@@ -1,0 +1,2 @@
+#!
+optirun ./tute-vbo

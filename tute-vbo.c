@@ -32,13 +32,21 @@ typedef struct {
 	float sensitivity;
 } Camera;
 
-/* Render state enums */
+/* Render states */
 enum RenderOptions {
 	RENDER_LIGHTING,
 	RENDER_WIREFRAME,
 	RENDER_FLAT,
 	RENDER_CULL_BACKFACE,
 	NUM_RENDER_OPTIONS /* MUST BE LAST! */
+};
+
+/* Meshes */
+enum MeshTypes {
+	SPHERE,
+	TORUS,
+	PLANE,
+	NUM_MESH_TYPES /* MUST BE LAST! */
 };
 
 /* Scene globals */
@@ -52,6 +60,7 @@ int lastMouseY = 0;
 int tesselation = 16;
 Vertex *vertices = NULL;
 int vertexCount = 0;
+int meshType = SPHERE;
 
 GLuint vertexBufferId = 0;
 
@@ -64,16 +73,40 @@ void setRenderOptions()
 		glEnable(GL_LIGHTING);
 	else
 		glDisable(GL_LIGHTING);
-	
+
 	if (renderOptions[RENDER_CULL_BACKFACE])
 		glEnable(GL_CULL_FACE);
 	else
 		glDisable(GL_CULL_FACE);
-	
+
 	glShadeModel(renderOptions[RENDER_FLAT] ? GL_FLAT : GL_SMOOTH);
 
-	glPolygonMode(GL_FRONT_AND_BACK, 
+	glPolygonMode(GL_FRONT_AND_BACK,
 		renderOptions[RENDER_WIREFRAME] ? GL_LINE : GL_FILL);
+}
+
+/* Generate the selected mesh at a given tesselation and load it into the mesh
+ * VBO as well as storing it into an array to be drawn in immediate mode. */
+void generateMesh () {
+	/* generate vertices */
+	switch (meshType) {
+		case SPHERE:
+			vertexCount = generateSphereVertices(&vertices, 1.0f, tesselation * 2,
+					tesselation);
+			break;
+		case TORUS:
+			vertexCount = generateTorusVertices(&vertices, 1.0f, 0.5f,
+					tesselation * 2, tesselation);
+			break;
+		case PLANE:
+			vertexCount = generatePlaneVertices(&vertices, 1.0f, tesselation);
+			break;
+	}
+
+	/* load vertices into VBO */
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferId);
+	glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(Vertex), vertices, GL_STATIC_READ);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 /* Called once at program start */
@@ -84,32 +117,22 @@ void init()
 	int argc = 0;  /* fake glutInit args */
 	char *argv = "";
 	glutInit(&argc, &argv);
-	
+
 	glClearColor(0, 0, 0, 0);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHT0);
-	
+
 	memset(&renderOptions, 0, sizeof(renderOptions));
 	renderOptions[RENDER_LIGHTING] = true;
 	memset(&camera, 0, sizeof(Camera));
 	camera.sensitivity = 0.3f;
 	camera.zoom = 2.0f;
 
-	printf("generate\n");
-	//generateSphereTriangleVertexArray(1.0f, tesselation * 2, tesselation)kkkjjN
-	//vertexCount = generateTorusVertices(&vertices, 1.0f, 0.5f, tesselation * 2, tesselation);
-	vertexCount = generatePlaneVertices(&vertices, 1.0f, tesselation);
-	printf("done\n");
-
 	/* create vertex buffer */
 	glGenBuffers(1, &vertexBufferId);
 
-	printf("vertexCount = %d\n", vertexCount);
-
-	/* put array into buffer */
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferId);
-	glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(Vertex), vertices, GL_STATIC_READ);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	/* generate the first mesh */
+	generateMesh();
 }
 
 /* Called once at start and again on window resize */
@@ -117,159 +140,26 @@ void reshape(int width, int height)
 {
 	windowWidth = width;
 	windowHeight = height;
-	
+
 	/* Portion of viewport to render to */
 	glViewport(0, 0, width, height);
-	
+
 	/* Calc aspect ratio */
 	float aspect = width / (float)height;
-	
+
 	/* Begin editing projection matrix */
 	glMatrixMode(GL_PROJECTION);
-	
+
 	/* Clear previous projection */
 	glLoadIdentity();
-	
+
 	/* Generate perspective projection matrix */
 	gluPerspective(75.0f, aspect, 0.01f, 100.0f);
-	
+
 	/* Restore modelview as current matrix */
 	glMatrixMode(GL_MODELVIEW);
 }
 
-#if 0
-void drawSphereVertex(float r, float u, float v)
-{
-	/* Use maths rather than physics spherical coordinate convention */
-	float theta = u * 2.0 * pi;
-	float phi = v * pi;
-
-	float x = r * cos(theta) * sin(phi);
-	float y = r * sin(theta) * sin(phi);
-	float z = r * cos(phi);
-
-	glNormal3f(x/r, y/r, z/r);
-	glVertex3f(x, y, z);
-}
-
-Vertex getSphereVertex(float r, float u, float v) {
-	Vertex vertex;
-
-	/* Use maths rather than physics spherical coordinate convention */
-	float theta = u * 2.0 * pi;
-	float phi = v * pi;
-
-	float x = r * cos(theta) * sin(phi);
-	float y = r * sin(theta) * sin(phi);
-	float z = r * cos(phi);
-	
-	vertex.normal.x = x / r;
-	vertex.normal.y = y / r;
-	vertex.normal.z = z / r;
-
-	vertex.pos.x = x;
-	vertex.pos.y = y;
-	vertex.pos.z = z;
-
-	return vertex;
-}
-
-Vertex getTorusVertex(float R, float r, float u, float v) {
-	Vertex vertex;
-
-	/* Use maths rather than physics spherical coordinate convention */
-	float theta = u * 2.0f * pi;
-	float phi = v * 2.0f * pi;
-
-	float x = (R + r * sin(theta)) * cos(phi);
-	float y = (R + r * sin(theta)) * sin(phi);
-	float z = r * cos(phi);
-	
-	vertex.normal.x = r * sin(theta) * cos(phi);
-	vertex.normal.y = r * sin(theta) * sin(phi);
-	vertex.normal.z = cos(phi);
-
-	vertex.pos.x = x;
-	vertex.pos.y = y;
-	vertex.pos.z = z;
-
-	return vertex;
-}
-
-void generateTorusTriangleVertexArray(float major, float minor, int slices, int stacks) {
-	int i, j;
-	float u, v, u1, v1;
-
-	/* Grid divisions (dimensions of quads, "fences") */
-	int divsU = slices;
-	int divsV = stacks;
-	
-	/* Vertex dimensions ("posts"). Note for a sphere, the
-	 * last vertex of each row is the same as the first */
-	int rows = divsU + 1;
-	int cols = divsV + 1;
-
-	/* update array size - two triangles per segment */
-	vertexCount = slices * stacks * 6;
-	vertices = (Vertex *) realloc(vertices, vertexCount * sizeof(Vertex));
-
-	/* j outer loop over i inner loop for each circle */
-	for (j = 0; j < cols - 1; ++j) {
-		v = j / (float)(cols - 1);
-		v1 = (j + 1) / (float)(cols - 1);
-		for (i = 0; i < rows - 1; ++i) {
-			u = i / (float)(rows - 1);
-			u1 = (i + 1) / (float)(rows - 1);
-
-			int index = ((j * divsU) + i) * 6;
-			vertices[index + 0] = getTorusVertex(major, minor, u, v);
-			vertices[index + 1] = getTorusVertex(major, minor, u, v1);
-			vertices[index + 2] = getTorusVertex(major, minor, u1, v1);
-
-			vertices[index + 3] = getTorusVertex(major, minor, u, v);
-			vertices[index + 4] = getTorusVertex(major, minor, u1, v1);
-			vertices[index + 5] = getTorusVertex(major, minor, u1, v);
-		}
-	}
-}
-
-void generateSphereTriangleVertexArray(float radius, int slices, int stacks) {
-	int i, j;
-	float u, v, u1, v1;
-
-	/* Grid divisions (dimensions of quads, "fences") */
-	int divsU = slices;
-	int divsV = stacks;
-	
-	/* Vertex dimensions ("posts"). Note for a sphere, the
-	 * last vertex of each row is the same as the first */
-	int rows = divsU + 1;
-	int cols = divsV + 1;
-
-	/* update array size - two triangles per segment */
-	vertexCount = slices * stacks * 6;
-	vertices = (Vertex *) realloc(vertices, vertexCount * sizeof(Vertex));
-
-	/* j outer loop over i inner loop for each circle */
-	for (j = 0; j < cols - 1; ++j) {
-		v = j / (float)(cols - 1);
-		v1 = (j + 1) / (float)(cols - 1);
-		for (i = 0; i < rows - 1; ++i) {
-			u = i / (float)(rows - 1);
-			u1 = (i + 1) / (float)(rows - 1);
-
-			int index = ((j * divsU) + i) * 6;
-			vertices[index + 0] = getSphereVertex(radius, u, v);
-			vertices[index + 1] = getSphereVertex(radius, u, v1);
-			vertices[index + 2] = getSphereVertex(radius, u1, v1);
-
-			vertices[index + 3] = getSphereVertex(radius, u, v);
-			vertices[index + 4] = getSphereVertex(radius, u1, v1);
-			vertices[index + 5] = getSphereVertex(radius, u1, v);
-		}
-	}
-}
-#endif
 
 void drawTrianglesFromVbo() {
 	glEnableClientState(GL_VERTEX_ARRAY);
@@ -296,84 +186,6 @@ void drawTrianglesFromArray()
 	}
 	glEnd();
 }
-
-#if 0
-void drawSphere(float radius, int slices, int stacks)
-{
-	int i, j;
-	float u, v, u1, v1;
-
-	/* Be carefull of loop and indices - 
-	 * http://en.wikipedia.org/wiki/Off-by-one_error */
-	
-	/* Grid divisions (dimensions of quads, "fences") */
-	int divsU = slices;
-	int divsV = stacks;
-	
-	/* Vertex dimensions ("posts"). Note for a sphere, the
-	 * last vertex of each row is the same as the first */
-	int rows = divsU + 1;
-	int cols = divsV + 1;
-
-	/* j outer loop over i inner loop for each circle */
-	glBegin(GL_TRIANGLES);
-	for (j = 0; j < cols - 1; ++j)
-	{
-		v = j / (float)(cols - 1);
-		v1 = (j + 1) / (float)(cols - 1);
-		for (i = 0; i < rows - 1; ++i)
-		{
-			u = i / (float)(rows - 1);
-			u1 = (i + 1) / (float)(rows - 1);
-			drawSphereVertex(radius, u, v);
-			drawSphereVertex(radius, u, v1);
-			drawSphereVertex(radius, u1, v1);
-			
-			drawSphereVertex(radius, u, v);
-			drawSphereVertex(radius, u1, v1);
-			drawSphereVertex(radius, u1, v);
-		}
-	}
-	glEnd();
-}
-
-void drawSphereStrips(float radius, int slices, int stacks)
-{
-	int i, j;
-	float u, v, u1, v1;
-
-	/* Grid divisions (dimensions of quads, "fences") */
-	int divsU = slices;
-	int divsV = stacks;
-	
-	/* Vertex dimensions ("posts"). Note for a sphere, the
-	 * last vertex of each row is the same as the first */
-	int rows = divsU + 1;
-	int cols = divsV + 1;
-
-	/* j outer loop over i inner loop for each circle */
-	glBegin(GL_TRIANGLE_STRIP);
-	for (j = 0; j < cols - 1; ++j)
-	{
-		v = j / (float)(cols - 1);
-		v1 = (j + 1) / (float)(cols - 1);
-		for (i = 0; i < rows - 1; ++i)
-		{
-			u = i / (float)(rows - 1);
-			u1 = (i + 1) / (float)(rows - 1);
-
-			glColor3f(v, u, 0.0f);
-
-			drawSphereVertex(radius, u, v);
-			drawSphereVertex(radius, u, v1);
-			
-			drawSphereVertex(radius, u1, v);
-			drawSphereVertex(radius, u1, v1);
-		}
-	}
-	glEnd();
-}
-#endif
 
 void drawAxes(float size) {
 	/* Backup previous "enable" state */
@@ -405,7 +217,7 @@ void drawOSD()
 {
 	char *bufp;
 	char buffer[32];
-	
+
 	/* Backup previous "enable" state */
 	glPushAttrib(GL_ENABLE_BIT);
 	glDisable(GL_DEPTH_TEST);
@@ -418,7 +230,7 @@ void drawOSD()
 	glLoadIdentity();
 	glOrtho(0, windowWidth, 0, windowHeight, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
-	
+
 	/* draw framerate */
 	glPushMatrix();
 	glLoadIdentity(); /* clear current modelview (ie. from display) */
@@ -427,7 +239,7 @@ void drawOSD()
 	for (bufp = buffer; *bufp; bufp++)
 		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *bufp);
 	glPopMatrix();
-	
+
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();  /* pop projection */
 	glMatrixMode(GL_MODELVIEW);
@@ -443,7 +255,7 @@ void display()
 	static float materialDiffuse[] = {0.7f, 0.7f, 0.7f, 1.0f}; /* Brighter as surface faces light */
 	static float materialSpecular[] = {0.3f, 0.3f, 0.3f, 1.0f}; /* Highlight, direct reflection from light */
 	static float materialShininess = 64.0f; /* 1 to 128, higher gives sharper highlight */
-	
+
 	/* Clear the colour and depth buffer */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -516,7 +328,7 @@ void mouseMove(int x, int y)
 void changeTesselation (int delta) {
 	tesselation += delta;
 	printf("tesselation is now %d\n", tesselation);
-	//generateSphereTriangleVertexArray(1.0f, tesselation * 2, tesselation);
+	generateMesh();
 }
 
 void keyDown(int key)

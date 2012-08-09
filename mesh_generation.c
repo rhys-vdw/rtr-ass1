@@ -109,7 +109,8 @@ int generatePlaneVertices(Vertex **verticesPtr, float size, int divisions) {
 }
 
 /** Generate triangle strip vertices for a torus. */
-int generateTorusVertices(Vertex **verticesPtr, float R, float r, int slices, int stacks) {
+int generateTorusVertices(Vertex **verticesPtr, float R, float r, int slices,
+		int stacks) {
 	int i, j;
 	float u, v, u1, v1;
 
@@ -138,7 +139,8 @@ int generateTorusVertices(Vertex **verticesPtr, float R, float r, int slices, in
 	return count;
 }
 
-int generateSphereVertices(Vertex **verticesPtr, float r, int slices, int stacks) {
+int generateSphereVertices(Vertex **verticesPtr, float r, int slices,
+		int stacks) {
 	int i, j;
 	float u, v, u1, v1;
 
