@@ -31,6 +31,14 @@ typedef struct {
 	float sensitivity;
 } Camera;
 
+/* TODO
+typedef struct {
+	vec4f position;
+	vec4f diffuse;
+	vec4f ambient;
+} Light;
+*/
+
 /* Render states */
 enum RenderOptions {
 	RENDER_LIGHTING,
@@ -49,6 +57,7 @@ int windowHeight;
 int lastMouseX = 0;
 int lastMouseY = 0;
 int tesselation = 16;
+int gridSize = 5;
 
 Vertex *vertices = NULL;
 int vertexCount = 0;
@@ -94,7 +103,8 @@ void generateMesh () {
 
 	/* load vertices into VBO */
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferId);
-	glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(Vertex), vertices, GL_STATIC_READ);
+	glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(Vertex), vertices,
+			GL_STATIC_READ);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -222,7 +232,8 @@ void drawOSD()
 	/* draw framerate */
 	glPushMatrix();
 	glLoadIdentity(); /* clear current modelview (ie. from display) */
-	snprintf(buffer, sizeof(buffer), "FR(fps): %d delta: %f", (int)currentFramerate, deltaTime);
+	snprintf(buffer, sizeof(buffer), "FR(fps): %d, DT(ms): %d",
+			(int)roundf(currentFramerate), (int) deltaTime);
 	glRasterPos2i(10, 10);
 	for (bufp = buffer; *bufp; bufp++)
 		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *bufp);
@@ -234,6 +245,30 @@ void drawOSD()
 
 	/* Restore "enable" state */
 	glPopAttrib();
+}
+
+void drawGrid()//this function uses a global variable gridSize but could be
+{					//changed to get this value as a parameter or whatever is most appropriate
+	//Uses gridSize to determine dimensions of grid
+	int i,j;
+	glPushMatrix();//Keep these operation completely undoable
+	for (j = 0; j < gridSize; j ++)
+	{
+		glPushMatrix();	//pushes for inner loop (x)
+		for (i = 0; i < gridSize; i ++)
+		{
+			drawTrianglesFromVbo();
+			//drawVertices(tesselation);	//So this will be replaced by a function to
+												//call the appropriate draw function depending on
+												//shape (sphere/torus/2d wave) and draw type
+												//(vbo, arrays, immediate) or a switch
+			glTranslatef(-1.5f, 0.0f, 0.0f);//moves one increment along x
+		}
+		glPopMatrix();		//pops so x values will be back to origin
+		glTranslatef(0.0f, 0.0f, -1.5f);// moves one increment along z
+	}
+	glPopMatrix();// returns matrix to how it was before this function was called
+
 }
 
 void display()
@@ -261,7 +296,8 @@ void display()
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, materialSpecular);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, materialShininess);
 
-	drawTrianglesFromVbo();
+	drawGrid();
+	//drawTrianglesFromVbo();
 	drawAxes(1.0f);
 
 	/* OSD - framerate etc */
@@ -271,7 +307,7 @@ void display()
 /* Called continuously. dt is time between frames in seconds */
 void update(float dt)
 {
-	deltaTime = dt * 1000;
+	deltaTime = dt;
 	static float fpsTime = 0.0f;
 	static int fpsFrames = 0;
 	fpsTime += dt;
