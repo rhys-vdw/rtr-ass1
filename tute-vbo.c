@@ -431,6 +431,11 @@ void keyDown(int key)
 		changeLights(1);
 	} else if (key == SDLK_s) {
 		changeLights(-1);
+	} else if (key == SDLK_e) {
+		gridSize++;
+	} else if (key == SDLK_d) {
+		int newSize = gridSize - 1;
+		gridSize = (newSize < 1) ? 1 : newSize;
 	}
 }
 
