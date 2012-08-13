@@ -143,17 +143,31 @@ int generateVertices(Vertex **verticesPtr, int meshType, int slices,
 int generateIndices(int **indicesPtr, int slices, int stacks) {
 	int i, j;
 
+	/* rows and columns of vertices (posts) */
 	int cols = slices + 1;
-	int count = (cols * stacks) * 2;
+
+	/* two degenerate vertices per row */
+	int degenerates = stacks * 2;
+
+	/* total vertices */
+	int count = (cols * stacks) * 2 + degenerates;
+
+	/* allocate array */
 	*indicesPtr = realloc(*indicesPtr, count * sizeof(int));
 	int *indices = *indicesPtr;
 
+	/* initialize */
+	int index = 0;
 	for (j = 0; j < stacks; j++) {
+		indices[index] = j * cols;
+		index++;
 		for (i = 0; i < cols; i++) {
-			int index = ((j * cols) + i) * 2;
 			indices[index + 0] = j * cols + i;
 			indices[index + 1] = (j + 1) * cols + i;
+			index += 2;
 		}
+		indices[index] = indices[index - 1];
+		index++;
 	}
 
 	return count;
