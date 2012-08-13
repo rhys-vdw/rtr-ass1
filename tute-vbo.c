@@ -86,29 +86,12 @@ void setRenderOptions()
 /* Generate the selected mesh at a given tesselation and load it into the mesh
  * VBO as well as storing it into an array to be drawn in immediate mode. */
 void generateMesh () {
-	/* generate vertices */
-	int slices, stacks;
+	/* determine tesselation */
+	int slices = (meshType != PLANE) ? tesselation * 2 : tesselation;
+	int stacks = tesselation;
 
-	switch (meshType) {
-		case SPHERE:
-			slices = tesselation * 2;
-			stacks = tesselation;
-			vertexCount = generateSphereVertices(&vertices, 1.0f, slices, stacks);
-			break;
-		case TORUS:
-			slices = tesselation * 2;
-			stacks = tesselation;
-			vertexCount = generateTorusVertices(&vertices, 1.0f, 0.5f, slices,
-					stacks);
-			break;
-		case PLANE:
-			slices = stacks = tesselation;
-			vertexCount = generatePlaneVertices(&vertices, 1.0f, slices, stacks);
-			break;
-		default:
-			assert(false);
-			break;
-	}
+	/* generate vertices and indices */
+	vertexCount = generateVertices(&vertices, meshType, slices, stacks);
 	indexCount = generateIndices(&indices, slices, stacks);
 
 	/* load vertices into VBO */
