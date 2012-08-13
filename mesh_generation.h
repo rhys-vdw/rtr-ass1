@@ -16,6 +16,12 @@ void setTorusOptions(float R, float r);
 void setSphereOptions(float r);
 void setPlaneOptions(float w, float h);
 
+/** Set wave properties. */
+void setWaveAmplitude(float amplitude);
+void setWaveFrequency(float frequency);
+float getWaveAmplitude();
+float getWaveFrequency();
+
 /** Generate triange strip vertices for a shape. */
 int generateVertices(Vertex **verticesPtr, int meshType, int slices, int stacks);
 

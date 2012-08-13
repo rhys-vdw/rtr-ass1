@@ -17,6 +17,10 @@ static float sphere_r = 1.0f;
 static float plane_w = 1.0f;
 static float plane_h = 1.0f;
 
+/* wave properties */
+static float wave_frequency = 30.00f;
+static float wave_amplitude = 0.05f;
+
 /** Set properties for torus. */
 void setTorusOptions(float R, float r) {
 	torus_R = R;
@@ -34,12 +38,36 @@ void setPlaneOptions(float w, float h) {
 	plane_h = w;
 }
 
+/** Set amplitude for wave. */
+void setWaveAmplitude(float amplitude) {
+	wave_amplitude = amplitude;
+}
+
+/** Set frequency for wave. */
+void setWaveFrequency(float frequency) {
+	wave_frequency = frequency;
+}
+
+float getWaveAmplitude() {
+	return wave_amplitude;
+}
+
+float getWaveFrequency() {
+	return wave_frequency;
+}
+
 /**
  * Reallocate given Vertex array to allow for specified number of Vertex
  * structs.
  */
 static Vertex *reallocVertexArray(Vertex *vertices, unsigned int length) {
 	return (Vertex *) realloc(vertices, length * sizeof(Vertex));
+}
+
+static void applyWaveToVertex(Vertex *vertex, float u, float v) {
+	float y = wave_amplitude * sin(wave_frequency * u * pi)* cos(wave_frequency * v* pi); 
+	vec3f change = vec3f_multiply(y, &vertex->normal);
+	vertex->pos = vec3f_add(&vertex->pos, &change);
 }
 
 static Vertex getPlaneVertex(float u, float v) {
@@ -134,6 +162,7 @@ int generateVertices(Vertex **verticesPtr, int meshType, int slices,
 			float u = i / (float) slices;
 			int index = j * cols + i;
 			vertices[index] = vertexFptr(u, v);
+			applyWaveToVertex(&vertices[index], u, v);
 		}
 	}
 

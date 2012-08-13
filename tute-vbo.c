@@ -407,8 +407,17 @@ void changeLights (int delta) {
 	}
 }
 
-void keyDown(int key)
-{
+void changeWaveAmplitude(float delta) {
+	setWaveAmplitude(getWaveAmplitude() + delta);
+	generateMesh();
+}
+
+void changeWaveFrequency(float delta) {
+	setWaveFrequency(getWaveFrequency() + delta);
+	generateMesh();
+}
+
+void keyDown(int key) {
 	if (key == SDLK_ESCAPE) {
 		quit();
 	} else if (key == SDLK_F3) {
@@ -436,6 +445,14 @@ void keyDown(int key)
 	} else if (key == SDLK_d) {
 		int newSize = gridSize - 1;
 		gridSize = (newSize < 1) ? 1 : newSize;
+	} else if (key == SDLK_r) {
+		changeWaveFrequency(1.0f);
+	} else if (key == SDLK_f) {
+		changeWaveFrequency(-1.0f);
+	} else if (key == SDLK_t) {
+		changeWaveAmplitude(0.025f);
+	} else if (key == SDLK_g) {
+		changeWaveAmplitude(-0.025f);
 	}
 }
 
