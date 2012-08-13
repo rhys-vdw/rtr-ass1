@@ -22,6 +22,11 @@
 #include "vertex.h"
 #include "mesh_generation.h"
 
+#define MAX_LIGHTS 8
+#define MIN_LIGHTS 1
+
+static const float pi = 3.14159265f;
+
 /* Basic camera struct */
 typedef struct {
 	int rotating;
@@ -31,13 +36,13 @@ typedef struct {
 	float sensitivity;
 } Camera;
 
-/* TODO
 typedef struct {
 	vec4f position;
 	vec4f diffuse;
 	vec4f ambient;
 } Light;
-*/
+
+int lightCount = 1;
 
 /* Render states */
 enum RenderOptions {
@@ -47,6 +52,7 @@ enum RenderOptions {
 	RENDER_CULL_BACKFACE,
 	NUM_RENDER_OPTIONS /* MUST BE LAST! */
 };
+
 
 /* Scene globals */
 Camera camera;
@@ -67,7 +73,10 @@ int indexCount = 0;
 
 int meshType = PLANE;
 
+Light lights[MAX_LIGHTS];
+
 GLuint vertexBufferId = 0;
+
 
 bool renderOptions[NUM_RENDER_OPTIONS] = { false, true, true, false };
 
@@ -132,6 +141,23 @@ void init()
 
 	/* generate the first mesh */
 	generateMesh();
+
+	/* init lights */
+	/* one point light */
+	lights[0].position = (vec4f) { 0.0f, 0.0f, 0.0f, 1.0f };
+	lights[0].ambient = (vec4f) { 0.1f, 0.1f, 0.1f, 1.0f };
+	lights[0].diffuse = (vec4f) {0.5f, 0.5f, 0.5f, 0.5f};
+
+	/* the rest are directional */
+	int i;
+	for (i = 1; i < MAX_LIGHTS; i++) {
+		glEnable(GL_LIGHT0 + i);
+		float t = (float) i / MAX_LIGHTS;
+		float theta = t * 2 * pi;
+		lights[i].position = (vec4f) { cos(theta), 0.0f, sin(theta), 0.0f };
+		lights[i].ambient = (vec4f) { 0.1f, 0.1f, 0.1f, 1.0f };
+		lights[i].diffuse = (vec4f) { 1.0f - t, 0.0f, t, 1.0f };
+	}
 }
 
 /* Called once at start and again on window resize */
@@ -273,8 +299,6 @@ void drawGrid()//this function uses a global variable gridSize but could be
 
 void display()
 {
-	static float lightPosition[] = {1.0f, 1.0f, 1.0f, 0.0f};
-	static float lightAmbient[] = {0.1f, 0.1f, 0.1f, 1.0f}; /* Constant, add to everything */
 	static float materialDiffuse[] = {0.7f, 0.7f, 0.7f, 1.0f}; /* Brighter as surface faces light */
 	static float materialSpecular[] = {0.3f, 0.3f, 0.3f, 1.0f}; /* Highlight, direct reflection from light */
 	static float materialShininess = 64.0f; /* 1 to 128, higher gives sharper highlight */
@@ -290,8 +314,15 @@ void display()
 
 	/* Draw scene */
 	setRenderOptions();
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient);
+
+	/* Draw lights */
+	int i;
+	for (i = 0; i < MAX_LIGHTS; i++) {
+		glLightfv(GL_LIGHT0 + i, GL_POSITION, (GLfloat *) &lights[i].position);
+		glLightfv(GL_LIGHT0 + i, GL_AMBIENT, (GLfloat *) &lights[i].ambient);
+		glLightfv(GL_LIGHT0 + i, GL_DIFFUSE, (GLfloat *) &lights[i].diffuse);
+	}
+
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, materialDiffuse);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, materialSpecular);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, materialShininess);
@@ -361,6 +392,21 @@ void changeTesselation (int delta) {
 	generateMesh();
 }
 
+void changeLights (int delta) {
+	lightCount += delta;
+	if (lightCount > MAX_LIGHTS) lightCount = MAX_LIGHTS;
+	if (lightCount < MIN_LIGHTS) lightCount = MIN_LIGHTS;
+
+	int i;
+	for (i = 0; i < MAX_LIGHTS; i++) {
+		if (i < lightCount) {
+			glEnable(GL_LIGHT0 + i);
+		} else {
+			glDisable(GL_LIGHT0 + i);
+		}
+	}
+}
+
 void keyDown(int key)
 {
 	if (key == SDLK_ESCAPE) {
@@ -381,6 +427,10 @@ void keyDown(int key)
 		renderOptions[RENDER_CULL_BACKFACE] = !renderOptions[RENDER_CULL_BACKFACE];
 	} else if (key == SDLK_i) {
 		toggleIdle();
+	} else if (key == SDLK_w) {
+		changeLights(1);
+	} else if (key == SDLK_s) {
+		changeLights(-1);
 	}
 }
 
