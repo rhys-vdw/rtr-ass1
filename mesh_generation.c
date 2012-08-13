@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
-#include <stdbool.h>
 #include "mesh_generation.h"
 
 static const float pi = 3.14159265f;
@@ -20,6 +19,7 @@ static float plane_h = 1.0f;
 /* wave properties */
 static float wave_frequency = 30.00f;
 static float wave_amplitude = 0.05f;
+static bool wave_enabled = false;
 
 /** Set properties for torus. */
 void setTorusOptions(float R, float r) {
@@ -54,6 +54,13 @@ float getWaveAmplitude() {
 
 float getWaveFrequency() {
 	return wave_frequency;
+}
+
+bool getWaveEnabled() {
+	return wave_enabled;
+}
+void setWaveEnabled(bool enabled) {
+	wave_enabled = enabled;
 }
 
 /**
@@ -162,7 +169,9 @@ int generateVertices(Vertex **verticesPtr, int meshType, int slices,
 			float u = i / (float) slices;
 			int index = j * cols + i;
 			vertices[index] = vertexFptr(u, v);
-			applyWaveToVertex(&vertices[index], u, v);
+			if (wave_enabled) {
+				applyWaveToVertex(&vertices[index], u, v);
+			}
 		}
 	}
 

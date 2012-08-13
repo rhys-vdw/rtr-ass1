@@ -1,6 +1,7 @@
 #ifndef MESH_GENERATION_H
 #define MESH_GENERATION_H
 
+#include <stdbool.h>
 #include "vertex.h"
 
 /** Meshes that can be generated. */
@@ -21,6 +22,8 @@ void setWaveAmplitude(float amplitude);
 void setWaveFrequency(float frequency);
 float getWaveAmplitude();
 float getWaveFrequency();
+bool getWaveEnabled();
+void setWaveEnabled(bool enabled);
 
 /** Generate triange strip vertices for a shape. */
 int generateVertices(Vertex **verticesPtr, int meshType, int slices, int stacks);

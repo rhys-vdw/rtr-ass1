@@ -417,6 +417,11 @@ void changeWaveFrequency(float delta) {
 	generateMesh();
 }
 
+void toggleWaveEnabled() {
+	setWaveEnabled(!getWaveEnabled());
+	generateMesh();
+}
+
 void keyDown(int key) {
 	if (key == SDLK_ESCAPE) {
 		quit();
@@ -453,6 +458,8 @@ void keyDown(int key) {
 		changeWaveAmplitude(0.025f);
 	} else if (key == SDLK_g) {
 		changeWaveAmplitude(-0.025f);
+	} else if (key == SDLK_F5) {
+		toggleWaveEnabled();
 	}
 }
 
