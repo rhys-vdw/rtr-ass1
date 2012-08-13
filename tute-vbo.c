@@ -18,11 +18,9 @@
 #include "sdlbase.h"
 
 #include "vec3f.h"
+#include "vec4f.h"
 #include "vertex.h"
 #include "mesh_generation.h"
-
-void generateSphereTriangleVertexArray(float radius, int slices, int stacks);
-void generateSphereTriangleStripVertexArray(float radius, int slices, int stacks);
 
 /* Basic camera struct */
 typedef struct {

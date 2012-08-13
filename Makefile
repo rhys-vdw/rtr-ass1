@@ -6,7 +6,7 @@ DEBUG = -g -Wall
 CFLAGS = `sdl-config --cflags` $(DEBUG) $(OPTIMISE)
 LDFLAGS = `sdl-config --libs` -lGL -lGLU -lglut -lm -lGLEW
 EXE = tute-vbo
-OBJECTS = tute-vbo.o sdlbase.o vec3f.o mesh_generation.o
+OBJECTS = tute-vbo.o sdlbase.o vec3f.o vec4f.o mesh_generation.o
 
 #default target
 all: $(EXE)
@@ -21,7 +21,7 @@ $(EXE) : $(OBJECTS)
 
 #additional dependencies
 sdlbase.o : sdlbase.h
-tute-vbo.o : sdlbase.h vec3f.h vertex.h mesh_generation.h
+tute-vbo.o : sdlbase.h vec3f.h vec4f.h vertex.h mesh_generation.h
 mesh_generation.o: mesh_generation.h vec3f.h vertex.h
 
 #clean (-f stops error if files don't exist)
