@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -41,14 +42,6 @@ enum RenderOptions {
 	NUM_RENDER_OPTIONS /* MUST BE LAST! */
 };
 
-/* Meshes */
-enum MeshTypes {
-	SPHERE,
-	TORUS,
-	PLANE,
-	NUM_MESH_TYPES /* MUST BE LAST! */
-};
-
 /* Scene globals */
 Camera camera;
 float currentFramerate;
@@ -58,9 +51,14 @@ int windowHeight;
 int lastMouseX = 0;
 int lastMouseY = 0;
 int tesselation = 16;
+
 Vertex *vertices = NULL;
 int vertexCount = 0;
-int meshType = SPHERE;
+
+int *indices = NULL;
+int indexCount = 0;
+
+int meshType = PLANE;
 
 GLuint vertexBufferId = 0;
 
@@ -89,19 +87,29 @@ void setRenderOptions()
  * VBO as well as storing it into an array to be drawn in immediate mode. */
 void generateMesh () {
 	/* generate vertices */
+	int slices, stacks;
+
 	switch (meshType) {
 		case SPHERE:
-			vertexCount = generateSphereVertices(&vertices, 1.0f, tesselation * 2,
-					tesselation);
+			slices = tesselation * 2;
+			stacks = tesselation;
+			vertexCount = generateSphereVertices(&vertices, 1.0f, slices, stacks);
 			break;
 		case TORUS:
-			vertexCount = generateTorusVertices(&vertices, 1.0f, 0.5f,
-					tesselation * 2, tesselation);
+			slices = tesselation * 2;
+			stacks = tesselation;
+			vertexCount = generateTorusVertices(&vertices, 1.0f, 0.5f, slices,
+					stacks);
 			break;
 		case PLANE:
-			vertexCount = generatePlaneVertices(&vertices, 1.0f, tesselation);
+			slices = stacks = tesselation;
+			vertexCount = generatePlaneVertices(&vertices, 1.0f, slices, stacks);
+			break;
+		default:
+			assert(false);
 			break;
 	}
+	indexCount = generateIndices(&indices, slices, stacks);
 
 	/* load vertices into VBO */
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferId);
@@ -168,11 +176,10 @@ void drawTrianglesFromVbo() {
 	glInterleavedArrays(GL_N3F_V3F, 0, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, vertexCount);
+	glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, indices);
 }
 
-void drawTrianglesFromArray()
-{
+void drawTrianglesFromArray() {
 	int i;
 	float t = 0.0f;
 
@@ -273,12 +280,8 @@ void display()
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, materialSpecular);
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, materialShininess);
 
-	//drawTrianglesFromArray();
 	drawTrianglesFromVbo();
-	//drawSphere(1.0f, tesselation * 2, tesselation);
-	//drawSphereStrips(1.0f, tesselation * 2, tesselation);
 	drawAxes(1.0f);
-	//glutSolidSphere(1.0f, 8, 4);
 
 	/* OSD - framerate etc */
 	drawOSD();
@@ -325,24 +328,39 @@ void mouseMove(int x, int y)
 	lastMouseY = y;
 }
 
+/* Change to another mesh */
+void changeMeshType (int change) {
+	if (change != 0) {
+		meshType = (meshType + change) % NUM_MESH_TYPES;
+		if (meshType < 0) {
+			meshType = NUM_MESH_TYPES - fabs(meshType);
+		}
+		generateMesh();
+	}
+}
+
 void changeTesselation (int delta) {
 	tesselation += delta;
-	printf("tesselation is now %d\n", tesselation);
 	generateMesh();
 }
 
 void keyDown(int key)
 {
-	if (key == SDLK_ESCAPE)
+	if (key == SDLK_ESCAPE) {
 		quit();
-	if (key == SDLK_F3)
+	} else if (key == SDLK_F3) {
 		renderOptions[RENDER_LIGHTING] = !renderOptions[RENDER_LIGHTING];
-	if (key == SDLK_F4)
+	} else if (key == SDLK_F4) {
 		renderOptions[RENDER_WIREFRAME] = !renderOptions[RENDER_WIREFRAME];
-	if (key == SDLK_F1)
+	} else if (key == SDLK_F1) {
 		changeTesselation(-tesselation / 2);
-	if (key == SDLK_F2)
+	} else if (key == SDLK_F2) {
 		changeTesselation(tesselation);
+	} else if (key == SDLK_q) {
+		changeMeshType(1);
+	} else if (key == SDLK_a) {
+		changeMeshType(-1);
+	}
 }
 
 void keyUp(int key)

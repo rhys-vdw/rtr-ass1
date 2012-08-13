@@ -78,91 +78,88 @@ static Vertex getSphereVertex(float r, float u, float v) {
 	return vertex;
 }
 
-/** Generate triangle strip vertices for a plane. */
-int generatePlaneVertices(Vertex **verticesPtr, float size, int divisions) {
+/** Generate vertices for a plane. */
+int generatePlaneVertices(Vertex **verticesPtr, float size, int slices,
+		int stacks) {
 	int i, j;
-	float u, v, u1, v1;
+	int rows = stacks + 1;
+	int cols = slices + 1;
 
-	Vertex *vertices;
-
-	int count = divisions * divisions * 4;
+	int count = rows * cols;
 	*verticesPtr = reallocVertexArray(*verticesPtr, count);
-	vertices = *verticesPtr;
+	Vertex *vertices = *verticesPtr;
 
-	for (j = 0; j < divisions; j++) {
-		v = j / (float) divisions;
-		v1 = (j + 1) / (float) divisions;
-		for (i = 0; i < divisions; i++) {
-			u = i / (float) divisions;
-			u1 = (i + 1) / (float) divisions;
-
-			int index = ((j * divisions) + i) * 4;
-			vertices[index + 0] = getPlaneVertex(size, u, v);
-			vertices[index + 1] = getPlaneVertex(size, u, v1);
-
-			vertices[index + 2] = getPlaneVertex(size, u1, v);
-			vertices[index + 3] = getPlaneVertex(size, u1, v1);
+	for (j = 0; j < rows; j++) {
+		float v = j / (float) slices;
+		for (i = 0; i < cols; i++) {
+			float u = i / (float) stacks;
+			int index = j * cols + i;
+			vertices[index] = getPlaneVertex(size, u, v);
 		}
 	}
 
 	return count;
 }
 
-/** Generate triangle strip vertices for a torus. */
+/** Generate vertices for a plane. */
 int generateTorusVertices(Vertex **verticesPtr, float R, float r, int slices,
 		int stacks) {
 	int i, j;
-	float u, v, u1, v1;
+	int rows = stacks + 1;
+	int cols = slices + 1;
 
-	Vertex *vertices;
-
-	int count = slices * stacks * 4;
+	int count = rows * cols;
 	*verticesPtr = reallocVertexArray(*verticesPtr, count);
-	vertices = *verticesPtr;
+	Vertex *vertices = *verticesPtr;
 
-	for (j = 0; j < stacks; j++) {
-		v = j / (float) stacks;
-		v1 = (j + 1) / (float) stacks;
-		for (i = 0; i < slices; i++) {
-			u = i / (float) slices;
-			u1 = (i + 1) / (float) slices;
-
-			int index = ((j * slices) + i) * 4;
-			vertices[index + 0] = getTorusVertex(R, r, u, v);
-			vertices[index + 1] = getTorusVertex(R, r, u, v1);
-
-			vertices[index + 2] = getTorusVertex(R, r, u1, v);
-			vertices[index + 3] = getTorusVertex(R, r, u1, v1);
+	for (j = 0; j < rows; j++) {
+		float v = j / (float) stacks;
+		for (i = 0; i < cols; i++) {
+			float u = i / (float) slices;
+			int index = j * cols + i;
+			vertices[index] = getTorusVertex(R, r, u, v);
 		}
 	}
 
 	return count;
 }
 
+/** Generate vertices for a plane. */
 int generateSphereVertices(Vertex **verticesPtr, float r, int slices,
 		int stacks) {
 	int i, j;
-	float u, v, u1, v1;
+	int rows = stacks + 1;
+	int cols = slices + 1;
 
-	Vertex *vertices;
-
-	int count = slices * stacks * 4;
+	int count = rows * cols;
 	*verticesPtr = reallocVertexArray(*verticesPtr, count);
-	vertices = *verticesPtr;
+	Vertex *vertices = *verticesPtr;
+
+	for (j = 0; j < rows; j++) {
+		float v = j / (float) stacks;
+		for (i = 0; i < cols; i++) {
+			float u = i / (float) slices;
+			int index = j * cols + i;
+			vertices[index] = getSphereVertex(r, u, v);
+		}
+	}
+
+	return count;
+}
+
+int generateIndices(int **indicesPtr, int slices, int stacks) {
+	int i, j;
+
+	int cols = slices + 1;
+	int count = (cols * stacks) * 2;
+	*indicesPtr = realloc(*indicesPtr, count * sizeof(int));
+	int *indices = *indicesPtr;
 
 	for (j = 0; j < stacks; j++) {
-		v = j / (float) stacks;
-		v1 = (j + 1) / (float) stacks;
-		for (i = 0; i < slices; i++) {
-			u = i / (float) slices;
-			u1 = (i + 1) / (float) slices;
-
-			int index = ((j * slices) + i) * 4;
-			vertices[index + 0] = getSphereVertex(r, u, v);
-			vertices[index + 1] = getSphereVertex(r, u, v1);
-
-			vertices[index + 2] = getSphereVertex(r, u1, v);
-			vertices[index + 3] = getSphereVertex(r, u1, v1);
+		for (i = 0; i < cols; i++) {
+			int index = ((j * cols) + i) * 2;
+			indices[index + 0] = j * cols + i;
+			indices[index + 1] = (j + 1) * cols + i;
 		}
 	}
 
