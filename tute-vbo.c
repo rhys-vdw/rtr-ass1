@@ -377,6 +377,10 @@ void keyDown(int key)
 		changeMeshType(1);
 	} else if (key == SDLK_a) {
 		changeMeshType(-1);
+	} else if (key == SDLK_c) {
+		renderOptions[RENDER_CULL_BACKFACE] = !renderOptions[RENDER_CULL_BACKFACE];
+	} else if (key == SDLK_i) {
+		toggleIdle();
 	}
 }
 

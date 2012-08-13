@@ -1,3 +1,4 @@
+#include <time.h>
 
 #include "sdlbase.h"
 
@@ -7,7 +8,17 @@
 #define DEFAULT_DEPTH 32
 #define DEFAULT_FLAGS (SDL_OPENGL | SDL_RESIZABLE)
 
+#define FPS_CAP 30
+#define MS_TO_NS 1000000
+#define S_TO_NS 1000000000 //a second to nanosecond conversion
+
 static int quitFlag = 0;
+static int idleFlag = 0;
+
+void toggleIdle()
+{
+	idleFlag = !idleFlag;
+}
 
 void quit()
 {
@@ -69,6 +80,18 @@ void processEvents()
 	}
 }
 
+//this is the actual function
+void idle(unsigned int delta)
+{
+	struct timespec fTime;// this is an existing struct
+	float nanoDelta = MS_TO_NS * delta;
+	fTime.tv_sec = 0.0f;
+	fTime.tv_nsec = (S_TO_NS / FPS_CAP) - nanoDelta;
+//so a nanosecond / requiredFR minus the time other stuff took
+
+	nanosleep(&fTime, NULL);
+}
+
 int main(int argc, char** argv)
 {
 	SDL_Surface *screen;
@@ -112,6 +135,11 @@ int main(int argc, char** argv)
 		display();
 
 		SDL_GL_SwapBuffers();
+
+		/* delay to maintain framerate */
+		if (idleFlag) {
+			idle(SDL_GetTicks() - thisTime);
+		}
 	}
 
 	cleanup();

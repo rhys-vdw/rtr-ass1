@@ -21,5 +21,6 @@ void cleanup();
 
 /* utility functions */
 void quit();
+void toggleIdle();
 
 #endif
