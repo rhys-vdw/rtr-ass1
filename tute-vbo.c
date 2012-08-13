@@ -53,6 +53,14 @@ enum RenderOptions {
 	NUM_RENDER_OPTIONS /* MUST BE LAST! */
 };
 
+enum VertexMode {
+	IMMEDIATE_MODE,
+	PRECOMPUTED_IMMEDIATE_MODE,
+	VERTEX_ARRAYS,
+	VERTEX_BUFFER_OBJECTS,
+	NUM_VERTEX_MODES
+};
+
 
 /* Scene globals */
 Camera camera;
@@ -65,6 +73,8 @@ int lastMouseY = 0;
 int tesselation = 16;
 int gridSize = 5;
 
+int vertexMode;
+
 Vertex *vertices = NULL;
 int vertexCount = 0;
 
@@ -76,7 +86,7 @@ int meshType = PLANE;
 Light lights[MAX_LIGHTS];
 
 GLuint vertexBufferId = 0;
-
+GLuint indexBufferId = 0;
 
 bool renderOptions[NUM_RENDER_OPTIONS] = { false, true, true, false };
 
@@ -115,6 +125,12 @@ void generateMesh () {
 	glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(Vertex), vertices,
 			GL_STATIC_READ);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	/* load indices into VBO */
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferId);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(Vertex), indices,
+			GL_STATIC_READ);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 /* Called once at program start */
@@ -138,6 +154,7 @@ void init()
 
 	/* create vertex buffer */
 	glGenBuffers(1, &vertexBufferId);
+	glGenBuffers(2, &indexBufferId);
 
 	/* generate the first mesh */
 	generateMesh();
@@ -151,7 +168,6 @@ void init()
 	/* the rest are directional */
 	int i;
 	for (i = 1; i < MAX_LIGHTS; i++) {
-		glEnable(GL_LIGHT0 + i);
 		float t = (float) i / MAX_LIGHTS;
 		float theta = t * 2 * pi;
 		lights[i].position = (vec4f) { cos(theta), 0.0f, sin(theta), 0.0f };
@@ -193,7 +209,9 @@ void drawTrianglesFromVbo() {
 	glInterleavedArrays(GL_N3F_V3F, 0, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, indices);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferId);
+	glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void drawTrianglesFromArray() {
@@ -328,7 +346,6 @@ void display()
 	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, materialShininess);
 
 	drawGrid();
-	//drawTrianglesFromVbo();
 	drawAxes(1.0f);
 
 	/* OSD - framerate etc */
